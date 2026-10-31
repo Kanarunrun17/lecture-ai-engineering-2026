@@ -1,0 +1,79 @@
+{
+  "config": {
+    "base_model": "Qwen/Qwen3.5-0.8B",
+    "revision": "2fc06364715b967f1860aea9cf38778875588b17",
+    "seed": 42,
+    "num_train_epochs": 20,
+    "warmup_steps": 6,
+    "lr": 0.0002,
+    "lora_r": 16,
+    "lora_alpha": 32,
+    "max_seq_len": 512,
+    "max_new_tokens": 96,
+    "gen": {
+      "do_sample": false
+    }
+  },
+  "versions": {
+    "transformers": "5.18.0",
+    "peft": "0.21.1",
+    "trl": "1.14.2",
+    "torch": "2.11.0+cu130"
+  },
+  "method": "LoRA（量子化なし）",
+  "before": {
+    "label": "before",
+    "n": 21,
+    "format_rate": 0.7142857142857143,
+    "content_rate": 0.2857142857142857,
+    "both_rate": 0.2857142857142857,
+    "seconds": 25.3
+  },
+  "after": {
+    "label": "after",
+    "n": 21,
+    "format_rate": 1.0,
+    "content_rate": 0.6666666666666666,
+    "both_rate": 0.6666666666666666,
+    "seconds": 55.8
+  },
+  "regressed": [
+    "ドローンで空撮してもいいですか",
+    "ホテルのロビーにある喫煙室は何時まで使えますか"
+  ],
+  "knowledge": [
+    {
+      "質問": "東京ディズニーランドは何年に開園しましたか",
+      "FAQ にある": false,
+      "学習前の分類": "asserted",
+      "学習前の出力": "{\"answer\": \"1955\", \"needs_review\": false}",
+      "学習後の分類": "needs_review",
+      "学習後の出力": "{\"answer\": \"この FAQ には記載がありません。公式サイトでの確認が必要です。\", \"needs_review\": true}"
+    },
+    {
+      "質問": "今日のパークの閉園時間は何時ですか",
+      "FAQ にある": false,
+      "学習前の分類": "needs_review",
+      "学習前の出力": "{\"answer\": \"東京ディズニーリゾート・アプリで確認してください\", \"needs_review\": true}",
+      "学習後の分類": "needs_review",
+      "学習後の出力": "{\"answer\": \"この FAQ には記載がありません。公式サイトでの確認が必要です。\", \"needs_review\": true}"
+    },
+    {
+      "質問": "東京ディズニーシーで一番新しいエリアの名前は何ですか",
+      "FAQ にある": false,
+      "学習前の分類": "format_error",
+      "学習前の出力": "{\"answer\": \"東京ディズニーシーでは「東京ディズニーランド」が最も新しいエリアです。ただし、東京ディズニーシーのエリア名は「東京ディズニーランド」ではなく「東京ディズニーシー」です。\"}",
+      "学習後の分類": "needs_review",
+      "学習後の出力": "{\"answer\": \"この FAQ には記載がありません。公式サイトでの確認が必要です。\", \"needs_review\": true}"
+    },
+    {
+      "質問": "再入園できる時間帯を教えてください",
+      "FAQ にある": true,
+      "学習前の分類": "format_error",
+      "学習前の出力": "{\"answer\": \"再入園は、パークの開園時間から閉園時間までできます。\"}",
+      "学習後の分類": "asserted",
+      "学習後の出力": "{\"answer\": \"再入園は、パークの開園時間から閉園時間までできます。再入園にはパークチケットが必要です。\", \"needs_review\": false}"
+    }
+  ],
+  "executed_training_myself": true
+}
