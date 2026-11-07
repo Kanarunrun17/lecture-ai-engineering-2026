@@ -5,10 +5,14 @@
 """
 
 import json
+import random
+from datetime import datetime
 from functools import cache
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# 第3回 宿題: 学習ログの保存先（固定。モデルにパスを決めさせない）
+LOG_DIR = Path(__file__).resolve().parent.parent / "learning_log"
 MAX_RESULTS = 3
 
 
@@ -77,3 +81,55 @@ def get_lecture_summary(lecture: int) -> str:
         available = sorted(p.stem for p in (DATA_DIR / "lectures").glob("*.md"))
         return f"第{lecture}回の要点はまだありません。用意されている回: {', '.join(available)}"
     return path.read_text(encoding="utf-8")
+
+
+def make_quiz(lecture: int) -> str:
+    """指定した回（1始まりの整数）の用語から確認問題を1問作り、問題と答えを返す。
+
+    「第2回の確認問題を出して」「復習のクイズを出して」のように、
+    確認問題・クイズ・理解度チェックを求められたときに使う。
+    答えは利用者が回答するまで見せないこと。
+    """
+    candidates = [e for e in load_glossary() if e["lecture"] == lecture]
+    if not candidates:
+        available = sorted({e["lecture"] for e in load_glossary()})
+        return (
+            f"第{lecture}回の用語は用語集にありません。"
+            f"問題を作れる回: {', '.join(f'第{n}回' for n in available)}"
+        )
+    entry = random.choice(candidates)
+    return json.dumps(
+        {
+            "question": f"「{entry['term']}」の意味は？",
+            "answer": entry["definition"],
+            "lecture": entry["lecture"],
+        },
+        ensure_ascii=False,
+    )
+
+
+def save_learning_log(title: str, content: str) -> str:
+    """学習の記録を Markdown ファイルとして learning_log/ に1件保存する。
+
+    「今日学んだことを記録して」「この内容をメモしておいて」のように、
+    学習の記録・メモ・ログを残すよう頼まれたときだけ使う。
+    title には記録の短い見出し（例: "LoRAとQLoRAの違い"）を入れる。
+    content には会話から学んだ要点を、Markdown の箇条書きでまとめて入れる。
+    保存は利用者の承認を得てから実行される。
+    """
+    title = title.strip()
+    content = content.strip()
+    if not title or not content:
+        return "title と content の両方を指定してください。保存はしていません。"
+
+    now = datetime.now()
+    LOG_DIR.mkdir(exist_ok=True)
+    path = LOG_DIR / f"{now:%Y%m%d-%H%M%S}.md"
+    text = f"# {title}\n\n- 保存日時: {now:%Y-%m-%d %H:%M:%S}\n\n{content}\n"
+    try:
+        # "x" は新規作成専用。同じ名前のファイルがあれば上書きせずにエラーにする
+        with open(path, "x", encoding="utf-8") as f:
+            f.write(text)
+    except FileExistsError:
+        return f"{path.name} はすでにあるため、上書きせずに中止しました。少し待ってから再度保存してください。"
+    return f"学習ログを保存しました: learning_log/{path.name}"
