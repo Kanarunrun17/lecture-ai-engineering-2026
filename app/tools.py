@@ -6,10 +6,13 @@
 
 import json
 import random
+from datetime import datetime
 from functools import cache
 from pathlib import Path
 
 DATA_DIR = Path(__file__).resolve().parent.parent / "data"
+# 第3回 宿題: 学習ログの保存先（固定。モデルにパスを決めさせない）
+LOG_DIR = Path(__file__).resolve().parent.parent / "learning_log"
 MAX_RESULTS = 3
 
 
@@ -103,3 +106,30 @@ def make_quiz(lecture: int) -> str:
         },
         ensure_ascii=False,
     )
+
+
+def save_learning_log(title: str, content: str) -> str:
+    """学習の記録を Markdown ファイルとして learning_log/ に1件保存する。
+
+    「今日学んだことを記録して」「この内容をメモしておいて」のように、
+    学習の記録・メモ・ログを残すよう頼まれたときだけ使う。
+    title には記録の短い見出し（例: "LoRAとQLoRAの違い"）を入れる。
+    content には会話から学んだ要点を、Markdown の箇条書きでまとめて入れる。
+    保存は利用者の承認を得てから実行される。
+    """
+    title = title.strip()
+    content = content.strip()
+    if not title or not content:
+        return "title と content の両方を指定してください。保存はしていません。"
+
+    now = datetime.now()
+    LOG_DIR.mkdir(exist_ok=True)
+    path = LOG_DIR / f"{now:%Y%m%d-%H%M%S}.md"
+    text = f"# {title}\n\n- 保存日時: {now:%Y-%m-%d %H:%M:%S}\n\n{content}\n"
+    try:
+        # "x" は新規作成専用。同じ名前のファイルがあれば上書きせずにエラーにする
+        with open(path, "x", encoding="utf-8") as f:
+            f.write(text)
+    except FileExistsError:
+        return f"{path.name} はすでにあるため、上書きせずに中止しました。少し待ってから再度保存してください。"
+    return f"学習ログを保存しました: learning_log/{path.name}"
