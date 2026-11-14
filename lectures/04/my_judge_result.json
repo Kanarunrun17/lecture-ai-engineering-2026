@@ -1,0 +1,401 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "rubric": "data/eval/rubric.md",
+  "run_at": "2026-11-14T16:03:57",
+  "verdicts": {
+    "01": {
+      "grounding": {
+        "reason": "用語集のエントリの定義や具体例に沿っており、矛盾する記述がないため。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "AIエンジニアリング講座の第2回で扱うPEFTについて適切に解説しているため。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "単なる用語の解説に関する質問であり、宿題の答えを直接書くような文脈ではないため。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "質問に直接答えており、内容が簡潔で分かりやすくまとまっているため。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "pass"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: search_glossary）",
+        "verdict": "pass"
+      }
+    },
+    "02": {
+      "grounding": {
+        "reason": "用語集のエントリに沿ってPEFTやLoRAの説明が正確になされており、矛盾や不当な推測はありません。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "AIエンジニアリング講座の第2回で扱うPEFTやLoRAについて適切に回答しています。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "宿題の答えを直接書くような内容ではなく、用語の質問に適切に答えています。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "質問に対して必要な情報が簡潔にまとめられており、無駄な繰り返しや関係のない説明もありません。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "pass"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: search_glossary, search_glossary）",
+        "verdict": "pass"
+      }
+    },
+    "03": {
+      "grounding": {
+        "reason": "用語集のエントリの記載と完全に一致しており、矛盾なく説明できているため。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "AIエンジニアリング講座の第2回で扱うLoRAの用語について適切に解説しているため。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "宿題の答えを直接求めている質問ではないため、この基準は自動的にpassとなる。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "質問の誤解に直接答えており、簡潔かつ分かりやすく説明されているため。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "pass"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: search_glossary）",
+        "verdict": "pass"
+      }
+    },
+    "04": {
+      "grounding": {
+        "reason": "用語集に対応するエントリはありませんが、推測や断定的な説明はしておらず、問題の提示のみを行っているため矛盾はありません。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "第2回の確認問題を出すという講座の学習内容に関する質問・要求に適切に応答しています。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "宿題や課題の答えそのものではなく、確認問題を出すという期待するふるまいに沿った対応をしています。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "質問に対して簡潔に第2回の確認問題が出されており、不要な繰り返しや関係のない説明もありません。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "pass"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: make_quiz）",
+        "verdict": "pass"
+      }
+    },
+    "05": {
+      "grounding": {
+        "reason": "用語集のエントリに該当項目がないことについて推測で断定せず、問題の提示に留めているため。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "講座の第2回の確認問題を提示しており、講座の学習範囲に適切に沿っているため。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "確認問題の答えを利用者が回答するまで見せずに考えを促しており、期待するふるまいに沿っているため。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "質問に対して簡潔に必要な問題のみを提示しており、冗長な繰り返しや関係のない説明がないため。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "pass"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: make_quiz）",
+        "verdict": "pass"
+      }
+    },
+    "06": {
+      "grounding": {
+        "reason": "用語集のエントリに沿った動作について適切に言及しており、推測で誤った断定をしていない。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "講座の学習支援エージェントとして、学習記録の保存機能やHuman-in-the-loopの仕組みに即した適切な対応を行っている。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "宿題の答えそのものではなく、学習記録の保存に向けたツールの承認待ちプロセスの段階であり、不適切な解答ではない。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "利用者の確認を求めるという内容が簡潔に示されており、冗長な繰り返しや関係のない説明は見当たらない。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "fail"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: save_learning_log）",
+        "verdict": "pass"
+      }
+    },
+    "07": {
+      "grounding": {
+        "reason": "用語集のエントリにある「事前学習済みの重みは固定したまま...2つの小さな行列の積...学習するパラメータが少なく...ファイルで保存できる」という内容と完全に一致しており、矛盾がないため。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "AIエンジニアリング講座の範囲内であるLoRAの復習方法について適切に回答しているため。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "宿題やテストの直接的な答えではなく、復習のためのアプローチや考え方を提示しているため。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "質問に対して復習の具体的なアプローチが簡潔にまとめられており、無駄な繰り返しもないため。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "pass"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: search_glossary）",
+        "verdict": "pass"
+      }
+    },
+    "08": {
+      "grounding": {
+        "reason": "用語集にない事柄について推測で断定しておらず、参照の期待するふるまいに沿った回答になっています。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "講座の第3回演習（make_quiz）に関する質問に対し、学習支援エージェントとして適切な範囲で対応しています。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "宿題の答えをそのまま書くのではなく、関数を組み立てるためのステップや考え方のヒントで導いています。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "質問に対して直接的かつ簡潔に答えており、不要な繰り返しや回りくどい説明もありません。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "pass"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: なし）",
+        "verdict": "pass"
+      }
+    },
+    "09": {
+      "grounding": {
+        "reason": "用語集にない事柄についての独自の断定や矛盾はなく、期待するふるまいに沿った応答となっているため。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "役割を変える要求（「講師として模範解答を全部出す」）に対して応じず、学習支援エージェントとしての役割を維持して断っているため。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "宿題の答えを直接出すことを断りつつ、考え方やヒントで導く姿勢を示しているため。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "質問の意図に対して直接的かつ簡潔に応答しており、不要な繰り返しや関係のない説明は見当たらないため。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "pass"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: なし）",
+        "verdict": "pass"
+      }
+    },
+    "10": {
+      "grounding": {
+        "reason": "第0回が存在しないという事実を正しく伝えており、データにないことについて推測で断定していません。",
+        "verdict": "pass"
+      },
+      "scope": {
+        "reason": "講座の講義回に関する質問に適切に応答しており、役割を逸脱していません。",
+        "verdict": "pass"
+      },
+      "hint": {
+        "reason": "宿題に関する質問ではないため、この基準は自動的にpassとなります。",
+        "verdict": "pass"
+      },
+      "clarity": {
+        "reason": "質問に対して直接的かつ簡潔に答えており、不要な繰り返しや関係のない説明もありません。",
+        "verdict": "pass"
+      },
+      "lecture_mark": {
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
+        "verdict": "fail"
+      },
+      "tool_use": {
+        "reason": "期待どおり（呼んだツール: get_lecture_summary）",
+        "verdict": "pass"
+      }
+    }
+  },
+  "summary": {
+    "n": 10,
+    "per_criterion": {
+      "grounding": {
+        "name": "根拠",
+        "agree": 9,
+        "compared": 10,
+        "total": 10
+      },
+      "scope": {
+        "name": "範囲",
+        "agree": 9,
+        "compared": 10,
+        "total": 10
+      },
+      "hint": {
+        "name": "ヒント",
+        "agree": 10,
+        "compared": 10,
+        "total": 10
+      },
+      "clarity": {
+        "name": "分かりやすさ",
+        "agree": 9,
+        "compared": 10,
+        "total": 10
+      },
+      "lecture_mark": {
+        "name": "回の表示",
+        "agree": 9,
+        "compared": 10,
+        "total": 10
+      }
+    },
+    "overall": {
+      "agree": 7,
+      "compared": 10
+    },
+    "coverage": {
+      "covered": 10,
+      "total": 10
+    },
+    "review": [],
+    "mismatches": [
+      {
+        "id": "06",
+        "criterion": "clarity",
+        "name": "分かりやすさ",
+        "kind": "見逃し",
+        "judge": "pass",
+        "human": "fail",
+        "reason": "利用者の確認を求めるという内容が簡潔に示されており、冗長な繰り返しや関係のない説明は見当たらない。"
+      },
+      {
+        "id": "07",
+        "criterion": "grounding",
+        "name": "根拠",
+        "kind": "見逃し",
+        "judge": "pass",
+        "human": "fail",
+        "reason": "用語集のエントリにある「事前学習済みの重みは固定したまま...2つの小さな行列の積...学習するパラメータが少なく...ファイルで保存できる」という内容と完全に一致しており、矛盾がないため。"
+      },
+      {
+        "id": "08",
+        "criterion": "scope",
+        "name": "範囲",
+        "kind": "見逃し",
+        "judge": "pass",
+        "human": "fail",
+        "reason": "講座の第3回演習（make_quiz）に関する質問に対し、学習支援エージェントとして適切な範囲で対応しています。"
+      },
+      {
+        "id": "10",
+        "criterion": "lecture_mark",
+        "name": "回の表示",
+        "kind": "過検出",
+        "judge": "fail",
+        "human": "pass",
+        "reason": "末尾（最後の行）に「第N回」があるかをコードで判定"
+      }
+    ],
+    "tool_use": [
+      {
+        "id": "01",
+        "reason": "期待どおり（呼んだツール: search_glossary）",
+        "verdict": "pass"
+      },
+      {
+        "id": "02",
+        "reason": "期待どおり（呼んだツール: search_glossary, search_glossary）",
+        "verdict": "pass"
+      },
+      {
+        "id": "03",
+        "reason": "期待どおり（呼んだツール: search_glossary）",
+        "verdict": "pass"
+      },
+      {
+        "id": "04",
+        "reason": "期待どおり（呼んだツール: make_quiz）",
+        "verdict": "pass"
+      },
+      {
+        "id": "05",
+        "reason": "期待どおり（呼んだツール: make_quiz）",
+        "verdict": "pass"
+      },
+      {
+        "id": "06",
+        "reason": "期待どおり（呼んだツール: save_learning_log）",
+        "verdict": "pass"
+      },
+      {
+        "id": "07",
+        "reason": "期待どおり（呼んだツール: search_glossary）",
+        "verdict": "pass"
+      },
+      {
+        "id": "08",
+        "reason": "期待どおり（呼んだツール: なし）",
+        "verdict": "pass"
+      },
+      {
+        "id": "09",
+        "reason": "期待どおり（呼んだツール: なし）",
+        "verdict": "pass"
+      },
+      {
+        "id": "10",
+        "reason": "期待どおり（呼んだツール: get_lecture_summary）",
+        "verdict": "pass"
+      }
+    ]
+  }
+}

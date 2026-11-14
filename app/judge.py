@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Literal
 
 from pydantic import BaseModel, Field
-from pydantic_ai import Agent
+from pydantic_ai import Agent, DeferredToolRequests
 from pydantic_ai.exceptions import ModelHTTPError, UnexpectedModelBehavior
 from pydantic_ai.messages import ModelMessage, ModelResponse, ToolCallPart, UserPromptPart
 from pydantic_ai.models.function import AgentInfo, FunctionModel
@@ -89,6 +89,26 @@ def check_lecture_mark(answer: str) -> Verdict:
     lines = [line.strip() for line in answer.strip().splitlines() if line.strip()]
     tail = lines[-1] if lines else ""
     return "pass" if re.search(r"第\s*\d+\s*回", tail) else "fail"
+
+
+def check_tool_use(case: dict) -> dict | None:
+    """宿題（実装）: ツールを呼んだか（道筋）を、生成時に記録した tools_called と照合する。LLM には聞かない。
+
+    reference の expected_tools（呼ぶべきツール）と forbidden_tools（呼んではいけないツール）を見る。
+    どちらも無いケースは対象外（None）。承認待ちで止まったツールも「呼ぼうとした」として数える。
+    """
+    ref = case.get("reference", {})
+    expected, forbidden = ref.get("expected_tools", []), ref.get("forbidden_tools", [])
+    if not expected and not forbidden:
+        return None
+    if "tools_called" not in case:
+        return {"reason": "tools_called が記録されていない（--generate で回答を生成し直す）", "verdict": "unsure"}
+    called = case["tools_called"]
+    missing = [t for t in expected if t not in called]
+    used = [t for t in forbidden if t in called]
+    problems = [f"呼ぶべき {t} を呼んでいない" for t in missing] + [f"呼んではいけない {t} を呼んだ" for t in used]
+    reason = "、".join(problems) if problems else "期待どおり"
+    return {"reason": f"{reason}（呼んだツール: {', '.join(called) or 'なし'}）", "verdict": "fail" if problems else "pass"}
 
 
 def reference_text(case: dict) -> str:
@@ -193,13 +213,16 @@ def judge_cases(agent: Agent, cases: list[dict], wait: float = 0.0) -> dict[str,
     verdicts: dict[str, dict] = {}
     print(f"採点中 {len(cases)} 件 ", end="", flush=True)
     for case in cases:
-        result = agent.run_sync(judge_prompt(case))
+        result = run_with_retry(lambda: agent.run_sync(judge_prompt(case)))
         out: JudgeResult = result.output
         verdicts[case["id"]] = {key: getattr(out, key).model_dump() for key, _ in LLM_CRITERIA}
         verdicts[case["id"]]["lecture_mark"] = {
             "reason": "末尾（最後の行）に「第N回」があるかをコードで判定",
             "verdict": check_lecture_mark(case["answer"]),
         }
+        tool_use = check_tool_use(case)
+        if tool_use:
+            verdicts[case["id"]]["tool_use"] = tool_use
         print(".", end="", flush=True)
         if wait:
             time.sleep(wait)
@@ -254,6 +277,8 @@ def summarize(cases: list[dict], verdicts: dict[str, dict], labels: dict[str, di
         "coverage": {"covered": overall_compared, "total": len(ids)},
         "review": review,
         "mismatches": mismatches,
+        # 宿題（実装）: ツールの呼び出し（道筋）はコードだけで判定する。人のラベルとは比べず、総合にも入れない
+        "tool_use": [{"id": cid, **verdicts[cid]["tool_use"]} for cid in ids if "tool_use" in verdicts[cid]],
     }
 
 
@@ -281,6 +306,11 @@ def print_summary(summary: dict, labeler: str = "自分のラベル") -> None:
     print(f"\n不一致 {len(summary['mismatches'])} 件")
     for m in summary["mismatches"]:
         print(f"  #{m['id']} {_pad(m['name'], 12)} {m['kind']}（LLM={m['judge']} 自分={m['human']}）  理由: {m['reason']}")
+    if summary.get("tool_use"):
+        ok = sum(1 for t in summary["tool_use"] if t["verdict"] == "pass")
+        print(f"\nツールの呼び出し（コードで判定） {ok}/{len(summary['tool_use'])} 件が期待どおり")
+        for t in summary["tool_use"]:
+            print(f"  #{t['id']} {t['verdict']:<6} {t['reason']}")
 
 
 def compare_labels(a: dict[str, dict], b: dict[str, dict], name_a: str, name_b: str) -> None:
@@ -301,17 +331,66 @@ def compare_labels(a: dict[str, dict], b: dict[str, dict], name_a: str, name_b: 
 
 
 # ---------------------------------------------------------------- 回答の生成（宿題・実装）
-def generate_answers(cases: list[dict], wait: float = 1.0) -> list[dict]:
-    """評価セットの各質問を自分のエージェント（app.agent）に投げ、回答を埋める。"""
+def called_tool_names(messages: list[ModelMessage]) -> list[str]:
+    """会話の記録から、モデルが呼んだ（呼ぼうとした）ツール名を順に取り出す。"""
+    return [
+        part.tool_name
+        for message in messages
+        if isinstance(message, ModelResponse)
+        for part in message.parts
+        if isinstance(part, ToolCallPart)
+    ]
+
+
+RETRY_STATUS = (429, 503)  # レート制限・混雑。待てば通ることが多い
+
+
+def run_with_retry(fn, retries: int = 4, first_wait: float = 20.0):
+    """fn() を実行し、レート制限（429）か混雑（503）なら待ってやり直す。待ち時間は 20→40→80→160 秒と倍にする。"""
+    for attempt in range(retries + 1):
+        try:
+            return fn()
+        except ModelHTTPError as e:
+            if e.status_code not in RETRY_STATUS or attempt == retries:
+                raise
+            delay = first_wait * 2**attempt
+            print(f"\n  [{e.status_code}] {delay:.0f} 秒待ってやり直します（{attempt + 1}/{retries}）", end="", flush=True)
+            time.sleep(delay)
+
+
+def generate_answers(cases: list[dict], wait: float = 5.0, save_to: Path | None = None) -> list[dict]:
+    """評価セットの各質問を自分のエージェント（app.agent）に投げ、回答を埋める。
+
+    宿題（実装）: 最終的な文章だけでは「どのツールを呼んだか」（道筋）が採点できないので、
+    呼んだツール名を tools_called に記録する。承認が必要なツールで止まった場合は承認せず
+    （ファイルは書かない）、止まったことを回答欄に書いて、approval_pending に記録する。
+
+    エージェントは 1 件でツール呼び出しを含めて何回も LLM を呼ぶので、レート制限にかかりやすい。
+    1 件ごとに wait 秒待ち、429 は待ってやり直す。save_to を渡すと 1 件ごとに保存し、
+    途中で止まっても、再実行すれば tools_called が記録済みのケースは飛ばして続きから生成する。
+    """
     from app.agent import agent, build_model
 
     model = build_model()
-    print(f"回答を生成中 {len(cases)} 件 ", end="", flush=True)
-    for case in cases:
-        result = agent.run_sync(case["question"], model=model)
-        case["answer"] = str(result.output)
+    todo = [c for c in cases if "tools_called" not in c]
+    if len(todo) < len(cases):
+        print(f"生成済みの {len(cases) - len(todo)} 件は飛ばします（作り直すときは、その行の tools_called を消す）")
+    print(f"回答を生成中 {len(todo)} 件 ", end="", flush=True)
+    for i, case in enumerate(todo):
+        if i:
+            time.sleep(wait)
+        result = run_with_retry(lambda: agent.run_sync(case["question"], model=model))
+        case["tools_called"] = called_tool_names(result.all_messages())
+        if isinstance(result.output, DeferredToolRequests):
+            pending = [call.tool_name for call in result.output.approvals]
+            case["approval_pending"] = pending
+            case["answer"] = f"（承認待ちで停止：{', '.join(pending)} を実行してよいか、利用者の確認を求めた。評価では承認していない）"
+        else:
+            case.pop("approval_pending", None)
+            case["answer"] = str(result.output)
+        if save_to:
+            write_jsonl(save_to, cases)
         print(".", end="", flush=True)
-        time.sleep(wait)
     print()
     return cases
 
@@ -328,7 +407,8 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--rubric", type=Path, default=DEFAULT_RUBRIC, help="採点の基準（markdown）")
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT, help="採点結果の保存先（json）")
     parser.add_argument("--model", default=None, help="採点に使うモデル。既定は AIE_MODEL。'test' で API を呼ばない偽モデル")
-    parser.add_argument("--wait", type=float, default=0.0, help="1 件ごとに待つ秒数（レート制限にかかるとき）")
+    parser.add_argument("--wait", type=float, default=None,
+                        help="1 件ごとに待つ秒数（レート制限にかかるとき）。既定は採点 0 秒、--generate 5 秒")
     parser.add_argument("--compare", type=Path, help="LLM を呼ばず、このラベルファイルと --labels の一致率を出す")
     parser.add_argument("--generate", action="store_true", help="評価セットの回答を自分のエージェントで生成し直す（--cases に上書き）")
     args = parser.parse_args(argv)
@@ -343,9 +423,10 @@ def main(argv: list[str] | None = None) -> None:
 
     if args.generate:
         try:
-            cases = generate_answers(cases)
+            cases = generate_answers(cases, wait=5.0 if args.wait is None else args.wait, save_to=args.cases)
         except ModelHTTPError as e:
-            print(api_error_message(e.status_code, str(e.body)[:200]))
+            print("\n" + api_error_message(e.status_code, str(e.body)[:200]))
+            print(f"ここまでの回答は {_rel(args.cases)} に保存済みです。もう一度実行すると続きから生成します")
             raise SystemExit(1)
         write_jsonl(args.cases, cases)
         print(f"→ {args.cases} に回答を書き込みました。次に tools/annotate.py でラベルを付けてください")
@@ -366,7 +447,7 @@ def main(argv: list[str] | None = None) -> None:
 
     judge = build_judge(model, rubric)
     try:
-        verdicts = judge_cases(judge, cases, wait=args.wait)
+        verdicts = judge_cases(judge, cases, wait=args.wait or 0.0)
     except ModelHTTPError as e:
         print("\n" + api_error_message(e.status_code, str(e.body)[:200]))
         raise SystemExit(1)
