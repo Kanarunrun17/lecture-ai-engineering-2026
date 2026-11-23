@@ -3,6 +3,7 @@
 使い方:
     uv run python -m app.agent "LoRAとQLoRAの違いは？"
     uv run python -m app.agent --trace "LoRAとQLoRAの違いは？"   # ツール呼び出しを表示
+    uv run python -m app.agent --hybrid --trace "LoRAとQLoRAの違いは？"  # 第5回 宿題: ベクトル+BM25のハイブリッド検索
     uv run python -m app.agent --graph --trace "LoRAとQLoRAの違いは？"  # 検索からグラフをたどって回答
     uv run python -m app.agent --tree --trace "LoRAとQLoRAの違いは？"  # 目次をたどって回答
     uv run python -m app.agent --full-context --trace "LoRAとQLoRAの違いは？"  # 全資料を一度に渡す
@@ -21,7 +22,7 @@ from pathlib import Path
 from contextlib import nullcontext
 from time import perf_counter
 
-from pydantic_ai import Agent, DeferredToolRequests, DeferredToolResults
+from pydantic_ai import Agent, DeferredToolRequests, DeferredToolResults, Tool
 from pydantic_ai.exceptions import ModelHTTPError
 from fastmcp import Client
 from pydantic_ai.mcp import MCPToolset, StdioTransport
@@ -31,7 +32,7 @@ from pydantic_ai.models.test import TestModel
 from pydantic_ai.providers.google import GoogleProvider
 
 from app import tools
-from app.retrieval import run_full_context
+from app.retrieval import format_rank, run_full_context
 from app.config import MODEL, api_error_message, get_api_key
 
 INSTRUCTIONS = """\
@@ -170,6 +171,18 @@ def print_trace(result, elapsed_seconds: float | None = None) -> None:
                                 print(f"      {child['content']}")
                         if not data["children"]:
                             print(f"    （末端ページ・本文{len(node.get('content', ''))}文字を取得）")
+                elif part.tool_name == "search_materials" and isinstance(part.content, str):
+                    # 第5回 宿題: 取得したページと、ハイブリッド時は各検索での順位を一覧で見せる
+                    data = json.loads(part.content)
+                    if data.get("error"):
+                        print(f"[tool return] {part.tool_name} -> {data['error']}")
+                    else:
+                        print(f"[tool return] {part.tool_name} -> {len(data['results'])} 件")
+                    for hit in data["results"]:
+                        ranks = ""
+                        if "rrf_score" in hit:
+                            ranks = f" [ベクトル {format_rank(hit['vector_rank'])} / BM25 {format_rank(hit['keyword_rank'])}]"
+                        print(f"    - 第{hit['lecture']}回 p.{hit['page']} {hit.get('title', '')}{ranks}")
                 else:
                     print(f"[tool return] {part.tool_name} -> {str(part.content)[:120]}…")
     usage = result.usage
@@ -207,6 +220,7 @@ def main() -> None:
     parser.add_argument("--trace", action="store_true", help="ツール呼び出しを表示する")
     modes = parser.add_mutually_exclusive_group()
     modes.add_argument("--mcp", action="store_true", help="第5回: ツールを MCP サーバー（app/mcp_servers.json）から受け取る")
+    modes.add_argument("--hybrid", action="store_true", help="第5回 宿題: ベクトル検索とBM25をRRFでまとめて検索する")
     modes.add_argument("--graph", action="store_true", help="検索結果からグラフをたどり、候補ページを読んで答える")
     modes.add_argument("--tree", action="store_true", help="目次をたどり、必要なページを読んで答える")
     modes.add_argument("--full-context", action="store_true", help="検索せず、lectures.jsonの全資料を一度に渡す")
@@ -219,6 +233,13 @@ def main() -> None:
         mode = target.override(instructions=TREE_INSTRUCTIONS, tools=[tools.browse_tree])
     elif args.graph:
         mode = target.override(instructions=GRAPH_INSTRUCTIONS, tools=[tools.search_graph])
+    elif args.hybrid:
+        # 第5回 宿題（実装）: 指示文・ツール名・説明文は通常の検索と同じにし、検索の中身だけを替える
+        mode = target.override(tools=[
+            Tool(tools.search_materials_hybrid, name="search_materials"),
+            tools.make_quiz,
+            Tool(tools.save_learning_log, requires_approval=True),
+        ])
     with mode:
         if args.list_tools:
             if args.full_context:
@@ -233,6 +254,8 @@ def main() -> None:
         print(f"[model] {MODEL}")
         if args.mcp:
             print("[tools] MCP サーバー（app/mcp_servers.json）")
+        if args.hybrid:
+            print("[search] ハイブリッド検索（ベクトル + BM25 を RRF で統合）")
 
         model = build_model()
         started = perf_counter()

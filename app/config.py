@@ -22,6 +22,12 @@ RAG_TOP_K = 5
 GRAPH_START_K = 3
 GRAPH_HOPS = 2
 GRAPH_MAX_RESULTS = 10
+# 第5回 宿題（実装）: ハイブリッド検索。ベクトル検索とキーワード検索（BM25）の
+# 上位候補をそれぞれ取り、RRF（Reciprocal Rank Fusion）で1つの順位にまとめる。
+HYBRID_CANDIDATES = 20  # 各検索から融合前に取る候補数
+RRF_K = 60  # RRF の定数。大きいほど上位と下位の差がなだらかになる
+BM25_K1 = 1.2
+BM25_B = 0.75
 EMBEDDING_MODEL = "gemini-embedding-001"
 EMBEDDING_DIMENSIONS = 768
 # 2,048トークンの上限に対し、タスク指定等の分を残す。超過時は切り捨てず停止する。
