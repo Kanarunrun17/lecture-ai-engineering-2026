@@ -154,6 +154,26 @@ def search_materials(query: str) -> str:
         return json.dumps({"error": api_error_message(e.code), "results": []}, ensure_ascii=False)
 
 
+def search_materials_hybrid(query: str) -> str:
+    """第1〜3回の本講義資料を検索し、関連ページの本文・タイトル・ページ番号を返す。
+
+    queryに調べたい内容を指定する。
+    """
+    # 第5回 宿題（実装）: search_materials と同じ説明文のまま、中身だけをハイブリッド検索に替える。
+    # agent.py の --hybrid では、このツールを "search_materials" という名前で登録するので、
+    # モデルから見えるツール（名前・説明・引数）は通常の検索とまったく同じになる。
+    from google.genai.errors import APIError
+    import sqlite3
+    from app.retrieval import hybrid_search
+
+    try:
+        return json.dumps({"results": hybrid_search(query)}, ensure_ascii=False)
+    except (ValueError, FileNotFoundError, sqlite3.Error) as e:
+        return json.dumps({"error": str(e), "results": []}, ensure_ascii=False)
+    except APIError as e:
+        return json.dumps({"error": api_error_message(e.code), "results": []}, ensure_ascii=False)
+
+
 def browse_tree(node_id: str | None = None) -> str:
     """目次とページの先頭文を返す。ページIDを指定すると全文を返す。
 
